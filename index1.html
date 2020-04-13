@@ -1,0 +1,247 @@
+<html>
+  <head>
+	<style>
+		body {
+    /* background: #72b8ff; */
+    font-family: helvetica, sans-serif;
+}
+.casing{
+    border: 1px solid #000;
+    width: 300px;
+    height: 550px;
+    margin: auto;
+    padding: 20px;
+    background: #333 linear-gradient(65deg, #333 60%, #444 60%, #333 100%);
+    border-radius: 20px;
+    box-shadow: 2px 2px 1px #444, 3px 3px 1px #555, 4px 4px 0px #666;
+}
+.window {
+    border: 1px solid #000;
+    border-radius: 10px;
+    background: #fff;
+    width: 100%;
+    height: calc(100% - 50px);
+    margin: auto;
+    padding: 10px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.header{
+    background: #ededed;
+    padding: 10px;
+    margin: -10px -10px 8px -10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+.home-btn{
+    height: 45px;
+    width: 45px;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 23px;
+    border: 1px solid #444;
+    background: #222;
+}
+.home-btn .hb-square{
+    background: none;
+    width: 23px;
+    height: 23px;
+    margin: 10px;
+    border-radius: 4px;
+    border: 1px solid #444;
+}
+
+.chat{
+    background: #72b8ff;
+    border-radius: 5px;
+    display: inline-block;
+    padding: 10px;
+    color: #fff;
+    font-weight: lighter;
+    font-size: small;
+    box-shadow: 1px 1px 2px rgba(0,0,0,.3);
+    margin: 5px;
+    position: relative;
+}
+.chat.u1{
+    float: left;
+    clear: both;
+    border-top-left-radius: 0px;
+}
+.chat.u1:before{
+    content: "";
+    width: 0px;
+    height: 0px;
+    display: block;
+    border-left: 5px solid transparent;
+    border-right: 5px solid #72b8ff;
+    border-top: 5px solid #72b8ff;
+    border-bottom: 5px solid transparent;
+    position: absolute;
+    top: 0px;
+    left: -10px;
+}
+.chat.u2{
+    float: right;
+    clear: both;
+    border-top-right-radius: 0px;
+    background: #00D025;
+}
+.chat.u2:before{
+    content: "";
+    width: 0px;
+    height: 0px;
+    display: block;
+    border-left: 5px solid #00D025;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #00D025;
+    border-bottom: 5px solid transparent;
+    position: absolute;
+    top: 0px;
+    right: -10px;
+}
+
+.new-chat{
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    background: #ededed;
+    height: 40px;
+    left: 0px;
+    border-top: 1px solid #ddd;
+}
+.new-chat input{
+    outline: none;
+    padding: 10px;
+    box-sizing: border-box;
+    font-size: 18px;
+    width: 250px;
+    height: 40px;
+    border: none;
+    display: inline-block;
+    color: #999;
+    font-weight: 100;
+    background: #ddd;
+}
+.new-chat button{
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    display: inline-block;
+    border: none;
+    color: #00D025;
+    background: none;
+    position: relative;
+    top: -3px;
+    outline: none;
+    cursor: pointer;
+}
+.new-chat button:active{
+    color: #555;
+}
+	</style>
+    <title>Chat app</title>
+  </head>
+  <body>
+    <form onsubmit="return enterName();">
+      <input id="name" placeholder="Enter name">
+      <input type="submit">
+    </form>
+    
+    <ul id="users"></ul>
+
+
+		<div style="bottom: 0;">
+		<form onsubmit="return sendMessage();">
+		<input id="message" placeholder="Enter message" required>
+		<button id="send">Send</button>
+		</form>
+		</div>
+	
+    
+    <div class="chats" id="messages"></div>
+
+  </body>
+</html>
+
+
+<!-- include jquery and socket IO -->
+<script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+
+<script>
+  // creating io instance
+var io = io.connect("http://localhost:3000");
+
+var receiver = "";
+var sender = "";
+
+</script>
+
+
+<script>
+  function enterName() {
+	    // get username
+	    var name = document.getElementById("name").value;
+
+	    // send it to server
+	    io.emit("user_connected", name);
+
+	    // save my name in global variable
+	    sender = name;
+
+	    // prevent the form from submitting
+	    return false;
+	}
+
+	// listen from server
+	io.on("user_connected", function (username) {
+    var html = "";
+    if(username!=sender){
+      html += "<li><button onclick='onUserSelected(this.innerHTML);'>" + username + "</button></li>";
+    }
+
+		document.getElementById("users").innerHTML += html;
+	});
+
+	function onUserSelected(username) {
+	    // save selected user in global variable
+	    receiver = username;
+	  }
+</script>
+
+
+<script>
+	function sendMessage() {
+		// get message
+		var message = document.getElementById("message").value;
+		document.getElementById("message").value='';
+
+		// send message to server
+		io.emit("send_message", {
+		  sender: sender,
+		  receiver: receiver,
+		  message: message
+		});
+
+		// append your own message
+		var html = "";
+		html += "<span class='u2 chat'>"/*You said: */ + message + "</span>";
+
+		document.getElementById("messages").innerHTML += html;
+
+		// prevent form from submitting
+		return false;
+	}
+
+	// listen from server
+	io.on("new_message", function (data) {
+		var html = "";
+		html += "<span class='u1 chat'>" + /*data.sender + " says: " +*/ data.message + "</span>";
+
+		document.getElementById("messages").innerHTML += html;
+	});
+</script>
